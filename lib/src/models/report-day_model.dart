@@ -7,6 +7,12 @@ class ReportDayModel {
   ReportDayModel(this.day, this.expenses);
 }
 
+class ReportCommonModel {
+  final List<ReportDayCellModel> expenses;
+
+  ReportCommonModel(this.expenses);
+}
+
 class ReportDayCellModel {
   final List<ReportDayItenModel> expenses;
   final List<ReportTotalLink> totalLinks;

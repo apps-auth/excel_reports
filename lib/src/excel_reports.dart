@@ -8,16 +8,18 @@ class Report {
   Excel generateReport({
     ReportHeader header,
     List<ReportDayModel> reportDays,
+    List<ReportCommonModel> reportCommons,
     CellStyle labelStyle,
     CellStyle totalCellStyle,
     DateFormat dayFormat,
     ReportFooter footer,
   }) {
-    assert(reportDays != null && reportDays.isNotEmpty,
-        "List<ExpenseDayModel> expenseDays is require data on type ReportType.Expense");
+    // assert(reportDays != null && reportDays.isNotEmpty,
+    //     "List<ExpenseDayModel> expenseDays is require data on type ReportType.Expense");
     excel = _generateReportExpense(
       header: header,
       expenseDays: reportDays,
+      expenseCommons: reportCommons,
       labelStyle: labelStyle,
       totalCellStyle: totalCellStyle,
       dayFormat: dayFormat,
@@ -29,6 +31,7 @@ class Report {
   Excel _generateReportExpense({
     @required ReportHeader header,
     @required List<ReportDayModel> expenseDays,
+    List<ReportCommonModel> expenseCommons,
     @required CellStyle labelStyle,
     @required CellStyle totalCellStyle,
     DateFormat dayFormat,
@@ -47,6 +50,7 @@ class Report {
       excel: excel,
       sheet: sheet,
       expenseDays: expenseDays,
+      expenseCommons: expenseCommons,
       labelStyle: labelStyle,
       totalCellStyle: totalCellStyle,
       dayFormat: dayFormat,

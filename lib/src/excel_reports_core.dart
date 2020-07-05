@@ -5,12 +5,15 @@ class ReportCore {
     @required Excel excel,
     @required String sheet,
     @required List<ReportDayModel> expenseDays,
+    @required List<ReportCommonModel> expenseCommons,
     @required CellStyle labelStyle,
     @required CellStyle totalCellStyle,
     @required DateFormat dayFormat,
     @required ReportFooter footer,
   }) {
-    Map<String, dynamic> map = _generateRow(excel, sheet, expenseDays);
+    Map<String, dynamic> map = _generateRow(
+        excel, sheet, expenseDays, expenseCommons,
+        dayFormat: dayFormat);
     excel = map['excel'];
 
     Map<int, Map<String, _ReportCellTotalModel>> totals = map['totals'];
@@ -45,8 +48,12 @@ class ReportCore {
   }
 
   Map<String, dynamic> _generateRow(
-      Excel excel, String sheet, List<ReportDayModel> expenseDays,
-      {DateFormat dayFormat}) {
+    Excel excel,
+    String sheet,
+    List<ReportDayModel> expenseDays,
+    List<ReportCommonModel> expenseCommons, {
+    DateFormat dayFormat,
+  }) {
     ReportHelper helper = ReportHelper();
     Sheet sheetObject = excel[sheet];
     int indexLabels = sheetObject.maxRows;
@@ -55,32 +62,47 @@ class ReportCore {
     Map<int, Map<String, _ReportCellTotalModel>> customTotal = {};
     Map<int, Map<String, _ReportCellTotalModel>> totals = {};
 
-    for (var indexDay = 0; indexDay < expenseDays.length; indexDay++) {
-      ReportDayModel expenseDay = expenseDays[indexDay];
-      DateTime day = expenseDay.day;
-      if (indexDay == 0) {
+    int totalLength = expenseDays.length;
+
+    if (expenseCommons != null && expenseCommons.isNotEmpty) {
+      totalLength = expenseCommons.length;
+    }
+
+    for (var indexDay = 0; indexDay < totalLength; indexDay++) {
+      dynamic expenseDay;
+      int rowIndex;
+      int columnIndex;
+
+      if (expenseCommons == null || expenseCommons.isEmpty) {
+        expenseDay = expenseDays[indexDay];
+        DateTime day = expenseDay.day;
+        if (indexDay == 0) {
+          excel = helper.updateCell(
+            excel: excel,
+            sheet: sheet,
+            value: "Dia",
+            cellStyle: expenseDay.expenses.first.expenses.first.label.cellStyle,
+            rowIndex: indexLabels,
+            columnIndex: 0,
+          );
+        }
+
+        rowIndex = sheetObject.maxRows;
+        columnIndex = 0;
+
         excel = helper.updateCell(
           excel: excel,
           sheet: sheet,
-          value: "Dia",
-          cellStyle: expenseDay.expenses.first.expenses.first.label.cellStyle,
-          rowIndex: indexLabels,
-          columnIndex: 0,
+          value: dayFormat ?? DateFormat("dd/MM").format(day),
+          cellStyle: expenseDay.expenses.first.expenses.first.cell.cellStyle,
+          rowIndex: rowIndex,
+          columnIndex: columnIndex,
         );
+        columnIndex++;
+      } else {
+        expenseDay = expenseCommons[indexDay];
       }
 
-      int rowIndex = sheetObject.maxRows;
-      int columnIndex = 0;
-
-      excel = helper.updateCell(
-        excel: excel,
-        sheet: sheet,
-        value: dayFormat ?? DateFormat("dd/MM").format(day),
-        cellStyle: expenseDay.expenses.first.expenses.first.cell.cellStyle,
-        rowIndex: rowIndex,
-        columnIndex: columnIndex,
-      );
-      columnIndex++;
       for (var expenseIndex = 0;
           expenseIndex < expenseDay.expenses.length;
           expenseIndex++) {
@@ -201,7 +223,10 @@ class ReportCore {
 
     Sheet sheetObject = excel[sheet];
 
-    int labelIndex = totals.keys.first - 1;
+    int labelIndex;
+    if (totals.isNotEmpty) {
+      labelIndex = totals.keys.first - 1;
+    }
 
     int lastColumnIndex = sheetObject.maxCols + 1;
 
