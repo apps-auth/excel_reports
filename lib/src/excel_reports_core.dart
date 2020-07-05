@@ -402,7 +402,7 @@ class ReportCore {
   }) {
     ReportHelper helper = ReportHelper();
     int columnIndex;
-    int rowIndex = initialRowIndex;
+    int rowIndex = initialRowIndex + 1;
 
     if (footer.position == ReportFooterPosition.EnderStart) {
       columnIndex = initialColumnIndex;
