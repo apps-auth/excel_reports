@@ -11,6 +11,7 @@ class Report {
     CellStyle labelStyle,
     CellStyle totalCellStyle,
     DateFormat dayFormat,
+    ReportFooter footer,
   }) {
     assert(reportDays != null && reportDays.isNotEmpty,
         "List<ExpenseDayModel> expenseDays is require data on type ReportType.Expense");
@@ -20,6 +21,7 @@ class Report {
       labelStyle: labelStyle,
       totalCellStyle: totalCellStyle,
       dayFormat: dayFormat,
+      footer: footer,
     );
     return excel;
   }
@@ -30,6 +32,7 @@ class Report {
     @required CellStyle labelStyle,
     @required CellStyle totalCellStyle,
     DateFormat dayFormat,
+    ReportFooter footer,
   }) {
     ReportCore reportExpense = ReportCore();
     ReportHelper helper = ReportHelper();
@@ -47,6 +50,7 @@ class Report {
       labelStyle: labelStyle,
       totalCellStyle: totalCellStyle,
       dayFormat: dayFormat,
+      footer: footer,
     );
 
     return excel;

@@ -15,6 +15,9 @@ part 'src/models/report-total-link_model.dart';
 part 'src/models/report-header_model.dart';
 part 'src/models/report-day_model.dart';
 part 'src/models/report-cell_model.dart';
+part 'src/models/report-column_model.dart';
+part 'src/models/report-footer_model.dart';
+
 
 part 'src/models/report-cell/report-cell_interface.dart';
 part 'src/models/report-cell/report-cell-duration_model.dart';
