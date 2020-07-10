@@ -16,7 +16,7 @@ class ReportCore {
         dayFormat: dayFormat);
     excel = map['excel'];
 
-    Map<int, Map<String, _ReportCellTotalModel>> totals = map['totals'];
+    List<Map<int, Map<String, _ReportCellTotalModel>>> totals = map['totals'];
     Map<int, Map<String, _ReportCellTotalModel>> total = map['total'];
     Map<int, Map<String, _ReportCellTotalModel>> customTotal =
         map['customTotal'];
@@ -60,18 +60,20 @@ class ReportCore {
 
     Map<int, Map<String, _ReportCellTotalModel>> total = {};
     Map<int, Map<String, _ReportCellTotalModel>> customTotal = {};
-    Map<int, Map<String, _ReportCellTotalModel>> totals = {};
+    List<Map<int, Map<String, _ReportCellTotalModel>>> totals = [];
 
-    int totalLength = expenseDays.length;
+    int totalLength;
 
     if (expenseCommons != null && expenseCommons.isNotEmpty) {
       totalLength = expenseCommons.length;
+    } else {
+      totalLength = expenseDays.length;
     }
 
     for (var indexDay = 0; indexDay < totalLength; indexDay++) {
       dynamic expenseDay;
       int rowIndex;
-      int columnIndex;
+      int columnIndex = 0;
 
       if (expenseCommons == null || expenseCommons.isEmpty) {
         expenseDay = expenseDays[indexDay];
@@ -81,26 +83,31 @@ class ReportCore {
             excel: excel,
             sheet: sheet,
             value: "Dia",
-            cellStyle: expenseDay.expenses.first.expenses.first.label.cellStyle,
+            cellStyle: expenseDay.expenses.isNotEmpty
+                ? expenseDay
+                        .expenses.first?.expenses?.first?.label?.cellStyle ??
+                    null
+                : null,
             rowIndex: indexLabels,
             columnIndex: 0,
           );
         }
-
         rowIndex = sheetObject.maxRows;
-        columnIndex = 0;
-
         excel = helper.updateCell(
           excel: excel,
           sheet: sheet,
           value: dayFormat ?? DateFormat("dd/MM").format(day),
-          cellStyle: expenseDay.expenses.first.expenses.first.cell.cellStyle,
+          cellStyle: expenseDay.expenses.isNotEmpty
+              ? expenseDay.expenses.first?.expenses?.first?.cell?.cellStyle ??
+                  null
+              : null,
           rowIndex: rowIndex,
           columnIndex: columnIndex,
         );
         columnIndex++;
       } else {
         expenseDay = expenseCommons[indexDay];
+        rowIndex = sheetObject.maxRows + 1;
       }
 
       for (var expenseIndex = 0;
@@ -110,6 +117,8 @@ class ReportCore {
 
         if (expense.totalLinks != null && expense.totalLinks.isNotEmpty) {
           expense.totalLinks.forEach((reportTotalLink) {
+            int indexReportLink = expense.totalLinks.indexOf(reportTotalLink);
+
             ReportDayItenModel cell =
                 expense.expenses[reportTotalLink.indexLabel];
             dynamic label = cell.cell.value;
@@ -163,12 +172,16 @@ class ReportCore {
                 }
               }
             } else {
-              if (totals[rowIndex] == null) {
-                totals[rowIndex] = {title: value.copyWith()};
-              } else if (totals[rowIndex][title] == null) {
-                totals[rowIndex][title] = value.copyWith();
+              if (totals.isEmpty || (totals.length - 1) < indexReportLink) {
+                totals.add({
+                  rowIndex: {title: value.copyWith()}
+                });
+              } else if (totals[indexReportLink][rowIndex] == null) {
+                totals[indexReportLink][rowIndex] = {title: value.copyWith()};
+              } else if (totals[indexReportLink][rowIndex][title] == null) {
+                totals[indexReportLink][rowIndex][title] = value.copyWith();
               } else {
-                totals[rowIndex][title].value += value.value;
+                totals[indexReportLink][rowIndex][title].value += value.value;
               }
             }
           });
@@ -215,7 +228,7 @@ class ReportCore {
     @required String sheet,
     @required Map<int, Map<String, _ReportCellTotalModel>> total,
     @required Map<int, Map<String, _ReportCellTotalModel>> customTotal,
-    @required Map<int, Map<String, _ReportCellTotalModel>> totals,
+    @required List<Map<int, Map<String, _ReportCellTotalModel>>> totals,
     @required CellStyle labelStyle,
     @required CellStyle cellStyle,
   }) {
@@ -224,8 +237,8 @@ class ReportCore {
     Sheet sheetObject = excel[sheet];
 
     int labelIndex;
-    if (totals.isNotEmpty) {
-      labelIndex = totals.keys.first - 1;
+    if (totals.isNotEmpty && totals.first.isNotEmpty) {
+      labelIndex = totals.first.keys.first - 1;
     }
 
     int lastColumnIndex = sheetObject.maxCols + 1;
@@ -339,52 +352,59 @@ class ReportCore {
     int lastColumnIndexIncrementable = sheetObject.maxCols + 1;
     Map<int, dynamic> totalOcurenses = {};
     if (totals.isNotEmpty) {
-      totals.forEach((rowIndex, map) {
-        map.forEach((occurence, value) {
-          int cIndex;
-          List<dynamic> row = sheetObject.rows[labelIndex];
+      for (var i = 0; i < totals.length; i++) {
+        Map<int, Map<String, _ReportCellTotalModel>> t = totals[i];
+        if (i > 0) {
+          lastColumnIndexIncrementable++;
+        }
 
-          int i = lastColumnIndex;
-          while (cIndex == null && i < row.length) {
-            dynamic c = row[i];
-            if (c == occurence) {
-              cIndex = i;
+        t.forEach((rowIndex, map) {
+          map.forEach((occurence, value) {
+            int cIndex;
+            List<dynamic> row = sheetObject.rows[labelIndex];
+
+            int i = lastColumnIndex;
+            while (cIndex == null && i < row.length) {
+              dynamic c = row[i];
+              if (c == occurence) {
+                cIndex = i;
+              }
+              i++;
             }
-            i++;
-          }
 
-          excel = helper.updateCell(
-            excel: excel,
-            sheet: sheet,
-            value: occurence,
-            rowIndex: labelIndex,
-            columnIndex: cIndex ?? lastColumnIndexIncrementable,
-            cellStyle: labelStyle,
-          );
-          excel = helper.updateCell(
-            excel: excel,
-            sheet: sheet,
-            value: value.valueFormated,
-            rowIndex: rowIndex,
-            columnIndex: cIndex ?? lastColumnIndexIncrementable,
-          );
-          if (cIndex == null) {
-            if (totalOcurenses[lastColumnIndexIncrementable] == null) {
-              totalOcurenses[lastColumnIndexIncrementable] = value.value;
+            excel = helper.updateCell(
+              excel: excel,
+              sheet: sheet,
+              value: occurence,
+              rowIndex: labelIndex,
+              columnIndex: cIndex ?? lastColumnIndexIncrementable,
+              cellStyle: labelStyle,
+            );
+            excel = helper.updateCell(
+              excel: excel,
+              sheet: sheet,
+              value: value.valueFormated,
+              rowIndex: rowIndex,
+              columnIndex: cIndex ?? lastColumnIndexIncrementable,
+            );
+            if (cIndex == null) {
+              if (totalOcurenses[lastColumnIndexIncrementable] == null) {
+                totalOcurenses[lastColumnIndexIncrementable] = value.value;
+              } else {
+                totalOcurenses[lastColumnIndexIncrementable] += value.value;
+              }
+
+              lastColumnIndexIncrementable++;
             } else {
-              totalOcurenses[lastColumnIndexIncrementable] += value.value;
+              if (totalOcurenses[cIndex] == null) {
+                totalOcurenses[cIndex] = value.value;
+              } else {
+                totalOcurenses[cIndex] += value.value;
+              }
             }
-
-            lastColumnIndexIncrementable++;
-          } else {
-            if (totalOcurenses[cIndex] == null) {
-              totalOcurenses[cIndex] = value.value;
-            } else {
-              totalOcurenses[cIndex] += value.value;
-            }
-          }
+          });
         });
-      });
+      }
     }
 
     if (totalValue != null) {
